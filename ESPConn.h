@@ -6,17 +6,23 @@
 class ESPConn {
   public:
     ESPConn(int rxPin, int txPin);
+    ESPConn(int rxPin, int txPin, bool debug);
     bool setupSerial();
-    bool sendReset();
+    int sendReset();
     bool connectToAP(String ssid, String pass);
+    String getIPAddr();
+    void pipeSerial();
   
   private:
     int _rxPin;
     int _txPin;
+    bool _debug;
     SoftwareSerial esp;
     String readLine();
-    bool readUntilLine(String text, bool debug);
-    bool readUntilOKorERROR(bool debug);
+    bool readUntilLine(String text);
+    int readUntilLineOptions(const char* texts[], int length);
+    bool readUntilOKorERROR();
+    
 
 };
 
