@@ -3,6 +3,8 @@
 
 #include <SoftwareSerial.h>
 
+typedef void (* TCPDataReceived)(int linkID, byte data[], int length);
+
 class ESPConn {
   public:
     ESPConn(int rxPin, int txPin);
@@ -12,7 +14,9 @@ class ESPConn {
     bool connectToAP(String ssid, String pass);
     String getIPAddr();
     void pipeSerial();
-  
+    bool enableMDS(String hostname, String service, int port);
+    bool listenTCP(int port, TCPDataReceived dataReceivedCallback);
+
   private:
     int _rxPin;
     int _txPin;
@@ -22,7 +26,7 @@ class ESPConn {
     bool readUntilLine(String text);
     int readUntilLineOptions(const char* texts[], int length);
     bool readUntilOKorERROR();
-    
+    void listenForTCPData(TCPDataReceived dataReceivedCallback);
 
 };
 

@@ -26,7 +26,7 @@ bool ESPConn::setupSerial() {
   pinMode(_txPin, OUTPUT);
   esp.begin(9600);
   delay(1000);
-  
+
   return true;
 }
 
@@ -38,7 +38,7 @@ int ESPConn::sendReset() {
   if (resetStatus == 0) {
     if (_debug) Serial.println("ESPConn - Looks not connected.");
     return 0;
-  } 
+  }
   // if it is connected wait for IP
   else if (resetStatus == 1) {
     if (_debug) Serial.println("ESPConn - Looks already connected.");
@@ -71,6 +71,33 @@ String ESPConn::getIPAddr() {
   if (_debug) Serial.print(ip);
   readUntilOKorERROR();
   return ip;
+}
+
+bool ESPConn::enableMDS(String hostname, String service, int port) {
+  esp.print("AT+MDNS=1,\"");
+  esp.print(hostname);
+  esp.print("\",\"");
+  esp.print(service);
+  esp.print("\",");
+  esp.println(port);
+  return readUntilOKorERROR();
+}
+
+bool ESPConn::listenTCP(int port, TCPDataReceived dataReceivedCallback) {
+  esp.println("AT+CIPMUX=1");
+  if (readUntilOKorERROR()) {
+    esp.print("AT+CIPSERVER=1,"); esp.println(port);
+    readUntilOKorERROR();
+    if (esp.available()) {
+      char dumpData[esp.available()];
+      esp.readBytes(dumpData, esp.available());
+      if (_debug) Serial.print(dumpData);
+    }
+    listenForTCPData(dataReceivedCallback);
+    pipeSerial();
+  } else {
+    return false;
+  }
 }
 
 bool ESPConn::readUntilLine(String text) {
@@ -114,7 +141,7 @@ bool ESPConn::readUntilOKorERROR() {
 }
 
 void ESPConn::pipeSerial() {
-  Serial.println("*** PIPING SERIAL TO ESP NOW ***");  
+  Serial.println("*** PIPING SERIAL TO ESP NOW ***");
   while (true) {
     if (Serial.available()) {
       esp.write(Serial.read());
@@ -122,5 +149,32 @@ void ESPConn::pipeSerial() {
     if (esp.available()) {
       Serial.write(esp.read());
     }
+  }
+}
+
+void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
+  if (_debug) Serial.println("Waiting for TCP connections");
+  while (!esp.available()) {}
+
+  String str = esp.readStringUntil('+');
+  int linkID, length;
+  if (_debug) Serial.println(str);
+  str = esp.readStringUntil(',');
+  if (str.equals("IPD")) {
+    str = esp.readStringUntil(',');
+    linkID = str.toInt();
+    str = esp.readStringUntil(',');
+    length = str.toInt();
+    if (esp.peek() == ':') { esp.read(); }
+
+    // wait until the data has arrived.
+    delay(100);
+    //while (esp.available() < length) {}
+
+    char data[length];
+    int readBytes = esp.readBytes(data, length);
+    Serial.print("Actually read ");
+    Serial.println(readBytes);
+    dataReceivedCallback(linkID, data, length);
   }
 }
