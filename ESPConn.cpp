@@ -73,7 +73,7 @@ String ESPConn::getIPAddr() {
   return ip;
 }
 
-bool ESPConn::enableMDS(String hostname, String service, int port) {
+bool ESPConn::enableMDNS(String hostname, String service, int port) {
   esp.print("AT+MDNS=1,\"");
   esp.print(hostname);
   esp.print("\",\"");
@@ -153,28 +153,53 @@ void ESPConn::pipeSerial() {
 }
 
 void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
+  //pipeSerial();
   if (_debug) Serial.println("Waiting for TCP connections");
-  while (!esp.available()) {}
+  while (true) {
+    while (!esp.available()) {}
 
-  String str = esp.readStringUntil('+');
-  int linkID, length;
-  if (_debug) Serial.println(str);
-  str = esp.readStringUntil(',');
-  if (str.equals("IPD")) {
-    str = esp.readStringUntil(',');
-    linkID = str.toInt();
-    str = esp.readStringUntil(',');
-    length = str.toInt();
-    if (esp.peek() == ':') { esp.read(); }
+    // check if connection status message.
+    if (esp.peek() != '+') {
+      String str = readLine();
+      if (str.endsWith("CONNECT")) {
+        if (_debug) {
+          Serial.println(str);
+          Serial.println("NEW CONN");
+        }
+        if ()
+      } else if (str.endsWith("CLOSED")) {
+        if (_debug) {
+          Serial.println(str);
+          Serial.println("CONN CLOSED");
+        }
+      }
+    } else {
+      Serial.println("looks like we have new data");
+      String str;
+      Serial.write(esp.read());
+      int linkID, length;
+      if (_debug) Serial.println(str);
+      str = esp.readStringUntil(',');
+      Serial.print(str);
+      if (str.equals("IPD")) {
+        str = esp.readStringUntil(',');
+        Serial.print(str);
+        linkID = str.toInt();
+        str = esp.readStringUntil(':');
+        Serial.print(str);
+        length = str.toInt();
+        if (esp.peek() == ':') { esp.read(); }
 
-    // wait until the data has arrived.
-    delay(100);
-    //while (esp.available() < length) {}
 
-    char data[length];
-    int readBytes = esp.readBytes(data, length);
-    Serial.print("Actually read ");
-    Serial.println(readBytes);
-    dataReceivedCallback(linkID, data, length);
+        byte data[length];
+        int readBytes = esp.readBytes(data, length);
+        Serial.print("Actually read ");
+        Serial.println(readBytes);
+        Serial.print(" content: ");
+        Serial.write(data, readBytes);
+        Serial.println();
+        dataReceivedCallback(linkID, data, length);
+      }
+    }
   }
 }

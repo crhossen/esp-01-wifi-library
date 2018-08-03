@@ -14,7 +14,7 @@ class ESPConn {
     bool connectToAP(String ssid, String pass);
     String getIPAddr();
     void pipeSerial();
-    bool enableMDS(String hostname, String service, int port);
+    bool enableMDNS(String hostname, String service, int port);
     bool listenTCP(int port, TCPDataReceived dataReceivedCallback);
 
   private:
