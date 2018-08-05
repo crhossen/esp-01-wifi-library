@@ -166,11 +166,19 @@ void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
           Serial.println(str);
           Serial.println("NEW CONN");
         }
-        if ()
       } else if (str.endsWith("CLOSED")) {
         if (_debug) {
           Serial.println(str);
           Serial.println("CONN CLOSED");
+        }
+      } else if (str.equals("")) {
+        // eat a carriage return if it exists
+        if (esp.peek() == '\n') {
+          esp.read();
+        }
+      } else {
+        if (_debug) {
+          Serial.print("DUNNO:"); Serial.println(str);
         }
       }
     } else {
@@ -189,7 +197,6 @@ void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
         Serial.print(str);
         length = str.toInt();
         if (esp.peek() == ':') { esp.read(); }
-
 
         byte data[length];
         int readBytes = esp.readBytes(data, length);

@@ -27,7 +27,6 @@ class ESPConn {
     int readUntilLineOptions(const char* texts[], int length);
     bool readUntilOKorERROR();
     void listenForTCPData(TCPDataReceived dataReceivedCallback);
-
 };
 
 #endif
