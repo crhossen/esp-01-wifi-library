@@ -210,3 +210,17 @@ void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
     }
   }
 }
+
+bool ESPConn::openSendCloseTCP(String host, int port, String str) {
+  byte data[str.length()];
+  str.getBytes(data, str.length());
+  openSendCloseTCP(host, port, data, str.length());
+
+  return true;
+}
+
+bool ESPConn::openSendCloseTCP(String host, int port, byte data[], int length) {
+  pipeSerial();
+
+  return true;
+}

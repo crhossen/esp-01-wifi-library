@@ -16,7 +16,9 @@ class ESPConn {
     void pipeSerial();
     bool enableMDNS(String hostname, String service, int port);
     bool listenTCP(int port, TCPDataReceived dataReceivedCallback);
-
+    //bool connectTCP(String host, int port, TCPDataReceived dataReceivedCallback);
+    bool openSendCloseTCP(String host, int port, String str);
+    bool openSendCloseTCP(String host, int port, byte data[], int length);
   private:
     int _rxPin;
     int _txPin;
@@ -27,6 +29,7 @@ class ESPConn {
     int readUntilLineOptions(const char* texts[], int length);
     bool readUntilOKorERROR();
     void listenForTCPData(TCPDataReceived dataReceivedCallback);
+
 };
 
 #endif
