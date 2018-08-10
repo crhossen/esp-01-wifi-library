@@ -222,7 +222,7 @@ bool ESPConn::openSendCloseTCP(String host, int port, String str) {
 
 bool ESPConn::openSendCloseTCP(String host, int port, byte data[], int length) {
   esp.print("AT+CIPSTART=\"TCP\",\"");
-  esp.print(host); esp.print("\","); esp.println(4321);
+  esp.print(host); esp.print("\","); esp.println(port);
   if (!readUntilOKorERROR()) {
     return false;
   }
@@ -240,6 +240,31 @@ bool ESPConn::openSendCloseTCP(String host, int port, byte data[], int length) {
 
   esp.println("AT+CIPCLOSE");
   readUntilOKorERROR();
+
+  return (sendResult == 1);
+}
+
+bool ESPConn::setupUDP(String ip, int port) {
+  esp.print("AT+CIPSTART=\"UDP\",\"");
+  esp.print(ip); esp.print("\","); esp.println(port);
+  return readUntilOKorERROR();
+}
+
+bool ESPConn::sendUDP(String str) {
+  // include room for null terminator
+  byte data[str.length() + 1];
+  str.getBytes(data, str.length() + 1);
+  return sendUDP(data, str.length());
+}
+
+bool ESPConn::sendUDP(byte data[], int length) {
+  esp.print("AT+CIPSEND="); esp.println(length);
+  if (!readUntilOKorERROR()) {
+    return false;
+  }
+  esp.readStringUntil('>');
+  esp.write(data, length);
+  int sendResult = readUntilLineOptions(SEND_TERMINATORS, 3);
 
   return (sendResult == 1);
 }

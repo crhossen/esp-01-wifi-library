@@ -18,6 +18,9 @@ class ESPConn {
     //bool connectTCP(String host, int port, TCPDataReceived dataReceivedCallback);
     bool openSendCloseTCP(String host, int port, String str);
     bool openSendCloseTCP(String host, int port, byte data[], int length);
+    bool setupUDP(String ip, int port);
+    bool sendUDP(String str);
+    bool sendUDP(byte data[], int length);
   private:
     int _rxPin;
     int _txPin;
