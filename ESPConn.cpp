@@ -3,6 +3,7 @@
 #include "ESPConn.h"
 
 const char* READY_TERMINATORS[] = { "WIFI DISCONNECT", "WIFI CONNECTED" };
+const char* SEND_TERMINATORS[] = { "SEND OK", "SEND FAIL", "ERROR" };
 
 ESPConn::ESPConn(int rxPin, int txPin) :
   esp(SoftwareSerial(rxPin, txPin))
@@ -212,15 +213,33 @@ void ESPConn::listenForTCPData(TCPDataReceived dataReceivedCallback) {
 }
 
 bool ESPConn::openSendCloseTCP(String host, int port, String str) {
-  byte data[str.length()];
-  str.getBytes(data, str.length());
-  openSendCloseTCP(host, port, data, str.length());
-
-  return true;
+  // include room for null terminator
+  byte data[str.length() + 1];
+  str.getBytes(data, str.length() + 1);
+  return openSendCloseTCP(host, port, data, str.length());
 }
 
 bool ESPConn::openSendCloseTCP(String host, int port, byte data[], int length) {
-  pipeSerial();
+  esp.print("AT+CIPSTART=\"TCP\",\"");
+  esp.print(host); esp.print("\","); esp.println(4321);
+  if (!readUntilOKorERROR()) {
+    return false;
+  }
 
-  return true;
+  if (_debug) {
+    Serial.print("Sending: ");
+    Serial.write(data, length); Serial.println();
+  }
+  esp.print("AT+CIPSEND="); esp.println(length);
+  if (!readUntilOKorERROR()) {
+    return false;
+  }
+  esp.readStringUntil('>');
+  esp.write(data, length);
+  int sendResult = readUntilLineOptions(SEND_TERMINATORS, 3);
+
+  esp.println("AT+CIPCLOSE");
+  readUntilOKorERROR();
+
+  return (sendResult == 1);
 }
